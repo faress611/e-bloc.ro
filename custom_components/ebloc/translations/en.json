@@ -1,0 +1,60 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "E-bloc Romania — Authentication",
+        "description": "Enter your e-bloc.ro account credentials.",
+        "data": {
+          "email": "Email",
+          "password": "Password",
+          "update_interval": "Update interval (seconds, min 43200 = 12h)"
+        }
+      }
+    },
+    "error": {
+      "auth_failed": "Authentication failed. Check your email and password.",
+      "autodiscover_failed": "Could not discover associations. Try again.",
+      "no_apartments": "No apartments found for this account."
+    },
+    "abort": {
+      "already_configured": "This account is already configured."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "menu_options": {
+          "licenta": "License",
+          "reconfigure": "Reconfigure account"
+        }
+      },
+      "licenta": {
+        "title": "E-bloc Romania License",
+        "description": "Status: {license_status}\n\nEnter license key to activate:",
+        "data": {
+          "license_key": "License key"
+        }
+      },
+      "reconfigure": {
+        "title": "Reconfigure E-bloc account",
+        "description": "Enter new credentials.",
+        "data": {
+          "email": "Email",
+          "password": "Password",
+          "update_interval": "Update interval (seconds)"
+        }
+      }
+    },
+    "error": {
+      "auth_failed": "Authentication failed.",
+      "autodiscover_failed": "Autodiscovery failed.",
+      "license_key_empty": "License key cannot be empty.",
+      "license_key_invalid": "Invalid license key.",
+      "license_already_used": "This key has already been used.",
+      "license_key_expired": "License key has expired.",
+      "license_fingerprint_mismatch": "Key does not match this device.",
+      "license_network_error": "Network error while checking license.",
+      "license_server_error": "Server error while checking license."
+    }
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "domain": "ebloc",
+  "name": "e-bloc România",
+  "codeowners": ["@cnecrea"],
+  "config_flow": true,
+  "documentation": "https://github.com/cnecrea/e-bloc.ro",
+  "iot_class": "cloud_polling",
+  "issue_tracker": "https://github.com/cnecrea/e-bloc.ro/issues",
+  "requirements": ["cryptography>=41.0.0"],
+  "version": "0.0.0"
+}
