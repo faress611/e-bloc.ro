@@ -1,1 +1,8 @@
 blank_issues_enabled: false
+contact_links:
+  - name: Ghid de instalare și configurare
+    url: https://github.com/cnecrea/e-bloc.ro/blob/main/SETUP.md
+    about: Instrucțiuni pas cu pas pentru instalare (HACS sau manual), configurarea e-bloc.ro România, editarea datelor și personalizarea cardurilor Lovelace.
+  - name: Ghid de debugging
+    url: https://github.com/cnecrea/e-bloc.ro/blob/main/DEBUG.md
+    about: Cum activezi loguri debug, interpretezi mesajele din log și raportezi probleme.
