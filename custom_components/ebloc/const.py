@@ -66,3 +66,5 @@ MAX_NR_PERS: Final = 10
 
 # ── Atribuție ─────────────────────────────────────────────
 ATTRIBUTION: Final = "Date furnizate de e-bloc.ro"
+
+LICENSE_PURCHASE_URL: Final = "https://hubinteligent.org/licenta/ebloc"

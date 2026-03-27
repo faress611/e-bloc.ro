@@ -27,6 +27,7 @@ from .const import (
     DEFAULT_UPDATE_INTERVAL,
     DOMAIN,
     LICENSE_DATA_KEY,
+    LICENSE_PURCHASE_URL,
     MIN_UPDATE_INTERVAL,
 )
 from .api import EblocApiClient
@@ -159,6 +160,7 @@ class EblocOptionsFlow(config_entries.OptionsFlow):
 
         errors: dict[str, str] = {}
         description_placeholders: dict[str, str] = {}
+        is_ro = self.hass.config.language == "ro"
 
         mgr: LicenseManager | None = self.hass.data.get(DOMAIN, {}).get(
             LICENSE_DATA_KEY
@@ -195,15 +197,48 @@ class EblocOptionsFlow(config_entries.OptionsFlow):
             description_placeholders["license_status"] = "\n".join(status_lines)
 
         elif server_status == "trial":
-            description_placeholders["license_status"] = (
-                f"⏳ Evaluare — {mgr.trial_days_remaining} zile rămase"
-            )
+            days = mgr.trial_days_remaining
+            if is_ro:
+                status_lines = [
+                    f"⏳ Evaluare — {days} zile rămase",
+                    "",
+                    f"🛒 Obține licență: {LICENSE_PURCHASE_URL}",
+                ]
+            else:
+                status_lines = [
+                    f"⏳ Trial — {days} days remaining",
+                    "",
+                    f"🛒 Get a license: {LICENSE_PURCHASE_URL}",
+                ]
+            description_placeholders["license_status"] = "\n".join(status_lines)
         elif server_status == "expired":
-            description_placeholders["license_status"] = "❌ Licență expirată"
+            if is_ro:
+                status_lines = [
+                    "❌ Licență expirată",
+                    "",
+                    f"🛒 Obține licență: {LICENSE_PURCHASE_URL}",
+                ]
+            else:
+                status_lines = [
+                    "❌ License expired",
+                    "",
+                    f"🛒 Get a license: {LICENSE_PURCHASE_URL}",
+                ]
+            description_placeholders["license_status"] = "\n".join(status_lines)
         else:
-            description_placeholders["license_status"] = (
-                "❌ Fără licență — funcționalitate blocată"
-            )
+            if is_ro:
+                status_lines = [
+                    "❌ Fără licență — funcționalitate blocată",
+                    "",
+                    f"🛒 Obține licență: {LICENSE_PURCHASE_URL}",
+                ]
+            else:
+                status_lines = [
+                    "❌ No license — functionality blocked",
+                    "",
+                    f"🛒 Get a license: {LICENSE_PURCHASE_URL}",
+                ]
+            description_placeholders["license_status"] = "\n".join(status_lines)
 
         if user_input is not None:
             cheie = user_input.get(CONF_LICENSE_KEY, "").strip()
