@@ -462,8 +462,20 @@ class IndexContorSensor(EblocEntity):
     """Index contor — valoare curentă + detalii contor."""
 
     _attr_icon = "mdi:counter"
-    _attr_state_class = SensorStateClass.TOTAL_INCREASING
-    _attr_native_unit_of_measurement = "m³"
+
+    @property
+    def state_class(self) -> SensorStateClass | None:
+        """State class doar cu licență validă (evită erori HA pe valoare string)."""
+        if not self._license_valid:
+            return None
+        return SensorStateClass.TOTAL_INCREASING
+
+    @property
+    def native_unit_of_measurement(self) -> str | None:
+        """Unitate de măsură doar cu licență validă."""
+        if not self._license_valid:
+            return None
+        return "m³"
 
     def __init__(
         self, coordinator: EblocCoordinator, id_user: int,
