@@ -15,12 +15,13 @@ Integrare custom pentru [Home Assistant](https://www.home-assistant.io/) care ad
 
 - **Autodiscovery complet** — asociațiile, apartamentele și contoarele sunt descoperite automat la autentificare.
 - **10 tipuri de senzori** cu atribute detaliate în limba română.
-- **Trimitere indecși** direct din Home Assistant (number selector + buton).
-- **Trimitere nr. persoane** direct din Home Assistant.
+- **Trimitere indecși** direct din Home Assistant (number selector + buton), cu fallback pe ultimul index valid.
+- **Trimitere nr. persoane** direct din Home Assistant, cu fallback pe ultima valoare declarată.
 - **Interval actualizare configurabil** — de la 12 ore (implicit) la 24 ore.
 - **Sistem de licențiere** cu perioadă de evaluare gratuită.
-- **Diagnosticare integrată** — export complet pentru depanare.
+- **Diagnosticare integrată** — export complet pentru depanare (fără date sensibile).
 - **Multi-cont** — suport pentru mai mulți utilizatori simultani.
+- **Logging detaliat** — fiecare trimitere de index sau nr. persoane este logată pas cu pas.
 
 ---
 
@@ -30,13 +31,16 @@ Integrare custom pentru [Home Assistant](https://www.home-assistant.io/) care ad
 
 Fiecare senzor urmează formatul `sensor.ebloc_{UserID}_{nume_senzor}`.
 
+---
+
 #### 1. Licență necesară
-Apare **doar** când licența lipsește sau a expirat.
+
+Apare **doar** când licența lipsește sau a expirat. Dispare automat la activarea licenței.
 
 | Câmp | Valoare exemplu |
 |------|----------------|
 | **Stare** | `Evaluare (30 zile)` / `Licență necesară` / `Licență expirată` |
-| **Atribute** | Fingerprint, status, tip licență |
+| **Atribute** | Fingerprint, status, tip licență, cache valid |
 
 ---
 
@@ -71,37 +75,45 @@ Apare **doar** când licența lipsește sau a expirat.
 | **CUI** | `RO12345678` |
 | **Adresă** | `Str. Exemplu, nr. 15, bl. A, sc. 1, Timișoara, jud. Timiș, cod 300100` |
 | **Oraș** | `Timișoara` |
+| **Sector** | *(doar pentru București)* |
 | **Județ** | `Timiș` |
 | `--- Președinte` | *(separator)* |
 | **Administrator** | `Admin Exemplu SRL` |
 | **Președinte** | `Ionescu Gheorghe` |
+| **Cenzor** | `Marinescu Ana` |
+| **Contabil** | `Georgescu Maria` |
 | `--- Încasări` | *(separator)* |
 | **Locul încasărilor** | `Sediul asociației, luni-vineri 10:00-14:00` |
 | **Telefon** | `0256 123 456` |
 | **Email asociație** | `asociatie@exemplu.ro` |
+| **Avertisment** | *(mesaj opțional de la asociație)* |
 
 ---
 
 #### 4. Index contor (per contor)
 `sensor.ebloc_{UserID}_index_{titlu_slug}`
 
-Câte un senzor per contor (apă rece, apă caldă, gaz, etc.). Unitate de măsură: **m³**.
+Câte un senzor per contor (apă rece, apă caldă, gaz, etc.). Unitate de măsură: **m³**. Clasă de status: **Total în creștere**.
+
+**Logica valorii principale:** senzorul afișează `index_nou` dacă acesta există și nu este null, altfel revine la `index_vechi`. Astfel, imediat după trimiterea unui index nou, senzorul reflectă noua valoare.
 
 | Câmp | Valoare exemplu |
 |------|----------------|
-| **Stare** | `145.230 m³` |
-| **ID contor** | `98765` |
+| **Stare** | `340.000 m³` |
+| **ID contor** | `91` |
 | **Denumire contor** | `AR bucătărie` |
 | **Tip contor** | `Apă rece` |
-| **Index vechi** | `145.230 m³` |
-| **Index nou** | `Nesetat` |
+| **Index actual** | `340.000 m³` |
+| **Index nou** | `340.000 m³` / `Nesetat` |
 | **Editare permisă** | `Da` / `Nu` |
 | **Drept editare** | `Da` / `Nu` |
 | **Serie contor** | `ABC123456` |
-| **Etichetă contor** | `Bucătărie` |
+| **Etichetă contor** | `2653485016` |
 | **Estimat** | `Nu` |
 
 Tipuri contor: `1` = Apă rece, `2` = Apă caldă, `3` = Gaz, `4` = Energie.
+
+> **Notă:** Atributul „Index actual" înlocuiește fostul „Index vechi" începând cu versiunea 1.1.0. Acesta reflectă valoarea curentă relevantă, nu neapărat `index_vechi` din API.
 
 ---
 
@@ -151,6 +163,8 @@ Acest senzor nu are atribute secundare — doar valoarea principală.
 #### 8. Tichete
 `sensor.ebloc_{UserID}_tichete`
 
+Afișează primele 5 tichete cu detalii de status (deschis/închis) preluate individual.
+
 | Câmp | Valoare exemplu |
 |------|----------------|
 | **Stare** | `3` *(numărul total de tichete)* |
@@ -183,7 +197,7 @@ Acest senzor nu are atribute secundare — doar valoarea principală.
 #### 10. Citire permisă
 `sensor.ebloc_{UserID}_citire_permisa`
 
-Determină dacă poți transmite indecșii în perioada curentă, pe baza comparării datelor calendaristice (`indecsi_start` ≤ azi ≤ `indecsi_end`).
+Determină dacă poți transmite indecșii în perioada curentă. Verificarea primară se face pe baza datelor calendaristice (`indecsi_start` ≤ azi ≤ `indecsi_end`), cu fallback pe flag-ul `can_edit_index` din API.
 
 | Câmp | Valoare exemplu |
 |------|----------------|
@@ -197,29 +211,33 @@ Determină dacă poți transmite indecșii în perioada curentă, pe baza compar
 
 ### Butoane (`button.*`)
 
+Butoanele sunt disponibile doar cu licență validă. Fiecare acțiune este logată detaliat (nivel `info`).
+
 #### Trimite index (per contor)
 `button.ebloc_{UserID}_trimite_index_{titlu_slug}`
 
-Preia valoarea din **number selector** (Index contor) și o trimite la API-ul e-bloc.ro. Apare doar pentru contoarele cu `right_edit_index = 1`.
+Preia valoarea din **number selector** (Index contor) și o trimite la API-ul e-bloc.ro. Apare doar pentru contoarele cu `right_edit_index = 1`. După trimitere, coordinatorul face refresh automat și senzorul se actualizează.
 
 #### Trimite nr. persoane
 `button.ebloc_{UserID}_trimite_nr_persoane`
 
-Preia valoarea din **number selector** (Nr. persoane) și o trimite la API. Luna este calculată **dinamic** (luna curentă), nu se folosește o valoare stale.
+Preia valoarea din **number selector** (Nr. persoane) și o trimite la API. Luna este calculată **dinamic** — se folosește mereu luna curentă, nu o valoare stale din inițializare.
 
 ---
 
 ### Number selectors (`number.*`)
 
+Selectoarele sunt locale — modificarea valorii **nu afectează** senzorul corespunzător și **nu trimite** date la API. Trimiterea se face exclusiv prin butonul asociat.
+
 #### Index contor (selector)
 `number.ebloc_{UserID}_index_{titlu_slug}_selector`
 
-Selector local cu unitate **m³**. Permite introducerea noului index (0–999999.999, pas 0.001). Valoarea **NU** afectează senzorul corespunzător — este folosită doar la trimitere (via buton).
+Selector local cu unitate **m³**. Permite introducerea noului index (0–999999.999, pas 0.001). La inițializare, pornește cu ultimul index disponibil din API (`index_nou` dacă există, altfel `index_vechi`) — dacă butonul este apăsat din greșeală, retrimite ultima valoare validă în loc de 0.
 
 #### Nr. persoane (selector)
 `number.ebloc_{UserID}_nr_persoane_selector`
 
-Selector local (0–10, pas 1). Permite alegerea numărului de persoane de trimis. Similar, **nu afectează** senzorul „Număr persoane" — acela citește din API.
+Selector local (0–10, pas 1). La inițializare, pornește cu ultima valoare `nr_pers` din API — aceeași logică de fallback ca la selectorul de index.
 
 ---
 
@@ -368,6 +386,21 @@ entities:
 
 ---
 
+## Logging
+
+Butoanele de trimitere (index și nr. persoane) logează fiecare pas al fluxului: apăsare, lookup entity, stare curentă, trimitere API, răspuns server, succes sau eșec. Nivelul implicit este `info` pentru fluxul normal și `warning` doar pentru erori reale.
+
+Pentru a vizualiza logurile, adaugă în `configuration.yaml`:
+
+```yaml
+logger:
+  default: warning
+  logs:
+    custom_components.ebloc: info
+```
+
+---
+
 ## Instalare
 
 Consultă **[SETUP.md](SETUP.md)** pentru ghidul complet de instalare și configurare.
@@ -382,16 +415,16 @@ Consultă **[DEBUG.md](DEBUG.md)** pentru ghidul de depanare.
 
 ```
 custom_components/ebloc/
-├── __init__.py          # Inițializare integrare + lifecycle
-├── api.py               # Client API e-bloc.ro (REST)
+├── __init__.py          # Inițializare integrare + lifecycle licență
+├── api.py               # Client API e-bloc.ro (REST, 14 endpoint-uri)
 ├── button.py            # Butoane (trimite index, trimite nr. persoane)
 ├── config_flow.py       # ConfigFlow + OptionsFlow (reconfigurare, licență)
 ├── const.py             # Constante (URL-uri, intervale, sentinel values)
-├── coordinator.py       # DataUpdateCoordinator (fetch paralel)
-├── diagnostics.py       # Export diagnosticare
+├── coordinator.py       # DataUpdateCoordinator (fetch paralel, luna corectă contoare)
+├── diagnostics.py       # Export diagnosticare (date mascate)
 ├── helpers.py           # Funcții helper (conversii date, mascare email)
 ├── license.py           # Sistem licențiere (Ed25519 + HMAC-SHA256)
-├── manifest.json        # Manifest integrare
+├── manifest.json        # Manifest integrare (v1.1.0)
 ├── number.py            # Number selectors (index contor, nr. persoane)
 ├── sensor.py            # 10 tipuri de senzori cu atribute românești
 ├── strings.json         # Traduceri interfață
@@ -415,11 +448,12 @@ custom_components/ebloc/
 
 - **Issues**: [github.com/cnecrea/e-bloc.ro/issues](https://github.com/cnecrea/e-bloc.ro/issues)
 - **Documentație**: [github.com/cnecrea/e-bloc.ro](https://github.com/cnecrea/e-bloc.ro)
+- **Licență**: [hubinteligent.org/licenta/ebloc](https://hubinteligent.org/licenta/ebloc)
 
 ---
 
 ## Licență
 
-Această integrare necesită o cheie de licență pentru funcționalitate completă. O perioadă de evaluare gratuită este disponibilă la prima instalare.
+Această integrare necesită o cheie de licență pentru funcționalitate completă. O perioadă de evaluare gratuită este disponibilă la prima instalare. Gestionarea licenței se face din **Setări → Integrări → E-bloc România → Configurare → Licență**.
 
 Dezvoltat de **Ciprian Nicolae** ([@cnecrea](https://github.com/cnecrea)).
