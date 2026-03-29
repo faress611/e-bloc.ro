@@ -35,7 +35,7 @@ Apare **doar** când licența lipsește sau a expirat.
 
 | Câmp | Valoare exemplu |
 |------|----------------|
-| **Stare** | `Evaluare (14 zile)` / `Licență necesară` / `Licență expirată` |
+| **Stare** | `Evaluare (30 zile)` / `Licență necesară` / `Licență expirată` |
 | **Atribute** | Fingerprint, status, tip licență |
 
 ---
