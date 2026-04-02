@@ -37,7 +37,19 @@ Prefixul tuturor mesajelor este `[Ebloc:*]`, deci poți filtra cu:
 
 ---
 
-## 2. Probleme frecvente
+## 2. Situații normale (nu sunt erori)
+
+### Licență — heartbeat
+
+```
+[Ebloc:License] Heartbeat OK. Licența este validă (expiră: 2027-01-15).
+```
+
+**Cauza**: verificarea periodică a licenței cu serverul a reușit. Comportament normal.
+
+---
+
+## 3. Probleme frecvente
 
 ### 2.1 „Autentificare eșuată" la configurare
 
@@ -135,9 +147,25 @@ Integrarea calculează luna dinamic la fiecare apăsare a butonului. Dacă probl
 2. Dacă e problemă de sesiune, integrarea încearcă re-autentificarea automat.
 3. Dacă serverul e-bloc.ro e down, așteaptă — coordinatorul va reîncerca la următorul interval.
 
+### 2.8 Licență invalidă
+
+**Simptom**: Toți senzorii arată `Licență necesară` deși ai introdus o cheie.
+
+**Cauze posibile**:
+- Cheia de licență este greșită sau incompletă.
+- Perioada de evaluare a expirat și nu ai activat o licență.
+- Licența a fost revocată.
+- Fingerprint-ul dispozitivului nu se potrivește.
+
+**Rezolvare**:
+1. Mergi la **Settings → Devices & Services → E-bloc România → Configure → Licență**.
+2. Verifică statusul afișat (Evaluare X zile / Licență activă / Licență expirată).
+3. Dacă a expirat perioada de evaluare, achiziționează o licență de la [hubinteligent.org/licenta/ebloc](https://hubinteligent.org/licenta/ebloc).
+4. Dacă ai o licență dar arată ca invalidă, reintroduceți cheia și confirmă.
+
 ---
 
-## 3. Diagnosticare integrată
+## 4. Diagnosticare integrată
 
 Home Assistant oferă export de diagnosticare automat:
 
@@ -153,7 +181,7 @@ Atașează acest fișier la orice issue pe GitHub.
 
 ---
 
-## 4. Resetarea completă
+## 5. Resetarea completă
 
 Dacă integrarea este într-o stare irecuperabilă:
 
@@ -168,7 +196,7 @@ Aceasta va:
 
 ---
 
-## 5. Verificări rapide prin Developer Tools
+## 6. Verificări rapide prin Developer Tools
 
 ### Starea unui senzor
 **Developer Tools → States** → caută `ebloc`
@@ -184,7 +212,7 @@ Aceasta va:
 
 ---
 
-## 6. Raportarea unui bug
+## 7. Raportarea unui bug
 
 Deschide un issue pe [GitHub](https://github.com/cnecrea/e-bloc.ro/issues) cu:
 
