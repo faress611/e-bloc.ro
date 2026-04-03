@@ -160,7 +160,7 @@ Integrarea calculează luna dinamic la fiecare apăsare a butonului. Dacă probl
 **Rezolvare**:
 1. Mergi la **Settings → Devices & Services → E-bloc România → Configure → Licență**.
 2. Verifică statusul afișat (Evaluare X zile / Licență activă / Licență expirată).
-3. Dacă a expirat perioada de evaluare, achiziționează o licență de la [hubinteligent.org/licenta/ebloc](https://hubinteligent.org/licenta/ebloc).
+3. Dacă a expirat perioada de evaluare, achiziționează o licență de la [hubinteligent.org/donate?ref=ebloc](https://hubinteligent.org/donate?ref=ebloc).
 4. Dacă ai o licență dar arată ca invalidă, reintroduceți cheia și confirmă.
 
 ---
