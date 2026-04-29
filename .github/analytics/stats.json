@@ -1609,6 +1609,34 @@
           "vizitatori_unici": 2
         }
       ]
+    },
+    "2026-04-29": {
+      "stars": 22,
+      "forks": 4,
+      "watchers": 2,
+      "open_issues": 0,
+      "referrers": [
+        {
+          "sursa": "github.com",
+          "vizite": 44,
+          "vizitatori_unici": 22
+        },
+        {
+          "sursa": "buymeacoffee.com",
+          "vizite": 5,
+          "vizitatori_unici": 1
+        },
+        {
+          "sursa": "Google",
+          "vizite": 4,
+          "vizitatori_unici": 2
+        },
+        {
+          "sursa": "hubinteligent.org",
+          "vizite": 2,
+          "vizitatori_unici": 2
+        }
+      ]
     }
   },
   "releases": {
@@ -1624,5 +1652,5 @@
     "1.1.0": 1,
     "1.0.0": 1
   },
-  "ultima_actualizare": "2026-04-28T08:33:26Z"
+  "ultima_actualizare": "2026-04-29T08:27:06Z"
 }
