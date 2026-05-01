@@ -243,6 +243,11 @@ async def async_setup_entry(
                 CitirePermisaSensor(coordinator, id_user, id_asoc, id_ap)
             )
 
+            # 10. Factură lunară (suma ultimei facturi)
+            entities.append(
+                FacturaLunaraSensor(coordinator, id_user, id_asoc, id_ap)
+            )
+
     _LOGGER.info(
         "[Ebloc:Sensor] Creez %d senzori pentru user %s",
         len(entities), id_user,
@@ -1113,5 +1118,138 @@ class CitirePermisaSensor(EblocEntity):
 
         can_edit = str(hap.get("can_edit_index", "0"))
         attributes["Flag API (can_edit_index)"] = "Da" if can_edit == "1" else "Nu"
+
+        return attributes
+
+
+# ──────────────────────────────────────────────
+# 10. Factură lunară
+# Suma totală a ultimei facturi din AppFacturiGetData.php
+# Stare: suma totală în lei (float)
+# Atribute: breakdown cheltuieli + fonduri + luna
+# ──────────────────────────────────────────────
+class FacturaLunaraSensor(EblocEntity):
+    """Factură lunară — suma totală a ultimei facturi + breakdown."""
+
+    _attr_icon = "mdi:receipt-text"
+
+    def __init__(
+        self, coordinator: EblocCoordinator, id_user: int,
+        id_asoc, id_ap,
+    ) -> None:
+        super().__init__(coordinator, id_user)
+        self._id_asoc = id_asoc
+        self._id_ap = id_ap
+        self._attr_name = "Factură lunară"
+        self._attr_unique_id = f"{DOMAIN}_{id_user}_{id_asoc}_{id_ap}_factura_lunara"
+        self._custom_entity_id = f"sensor.{DOMAIN}_{id_user}_{id_asoc}_factura_lunara"
+
+    @property
+    def device_info(self) -> DeviceInfo:
+        return _association_device(self._id_user, self._id_asoc)
+
+    @property
+    def native_unit_of_measurement(self) -> str | None:
+        """Unitate de măsură doar cu licență validă."""
+        if not self._license_valid:
+            return None
+        return "lei"
+
+    def _get_facturi_data(self) -> dict[str, Any]:
+        """Returnează datele facturilor din coordinator."""
+        ap_data = self._get_ap_data(self._id_asoc, self._id_ap)
+        return ap_data.get("facturi", {})
+
+    def _compute_total(self) -> float:
+        """Calculează suma totală a facturii (cheltuieli + fonduri)."""
+        facturi = self._get_facturi_data()
+        if not facturi or facturi.get("result") != "ok":
+            return 0.0
+
+        total = 0
+        for key in ("aFactChelt", "aFactFond"):
+            for item in facturi.get(key, []):
+                try:
+                    total += int(item.get("suma", 0))
+                except (ValueError, TypeError):
+                    pass
+        return round(total / AMOUNT_DIVISOR, 2)
+
+    @property
+    def native_value(self) -> float | str:
+        if not self._license_valid:
+            return "Licență necesară"
+        return self._compute_total()
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        if not self._license_valid:
+            return {"Licență": "necesară"}
+
+        facturi = self._get_facturi_data()
+        attributes: dict[str, Any] = {}
+
+        if not facturi or facturi.get("result") != "ok":
+            attributes["Status"] = "Fără date"
+            return attributes
+
+        # Luna facturii — din coordinator data
+        data = self.coordinator.data or {}
+        luna_val = data.get("luna", "")
+        if luna_val:
+            attributes["Luna"] = luna_ro(luna_val)
+
+        # Luni disponibile din aLuni
+        a_luni = facturi.get("aLuni", [])
+        if a_luni:
+            luni_list = []
+            for l in a_luni[:12]:
+                if isinstance(l, str):
+                    luni_list.append(luna_ro(l))
+                elif isinstance(l, dict):
+                    lv = l.get("luna", "")
+                    if lv:
+                        luni_list.append(luna_ro(lv))
+            if luni_list:
+                attributes["Luni disponibile"] = len(luni_list)
+
+        # Cheltuieli
+        chelt_list = facturi.get("aFactChelt", [])
+        total_chelt = 0
+        if chelt_list:
+            attributes["--- Cheltuieli"] = ""
+            for item in chelt_list:
+                titlu = item.get("titlu", item.get("nume", "Cheltuială"))
+                suma_raw = item.get("suma", 0)
+                try:
+                    suma_int = int(suma_raw)
+                    total_chelt += suma_int
+                    suma_lei = round(suma_int / AMOUNT_DIVISOR, 2)
+                except (ValueError, TypeError):
+                    suma_lei = 0.0
+                attributes[titlu] = f"{suma_lei} lei"
+            attributes["Total cheltuieli"] = f"{round(total_chelt / AMOUNT_DIVISOR, 2)} lei"
+
+        # Fonduri
+        fond_list = facturi.get("aFactFond", [])
+        total_fond = 0
+        if fond_list:
+            attributes["--- Fonduri"] = ""
+            for item in fond_list:
+                titlu = item.get("titlu", item.get("nume", "Fond"))
+                suma_raw = item.get("suma", 0)
+                try:
+                    suma_int = int(suma_raw)
+                    total_fond += suma_int
+                    suma_lei = round(suma_int / AMOUNT_DIVISOR, 2)
+                except (ValueError, TypeError):
+                    suma_lei = 0.0
+                attributes[titlu] = f"{suma_lei} lei"
+            attributes["Total fonduri"] = f"{round(total_fond / AMOUNT_DIVISOR, 2)} lei"
+
+        # Total general
+        attributes["--- Total"] = ""
+        total_general = round((total_chelt + total_fond) / AMOUNT_DIVISOR, 2)
+        attributes["Total factură"] = f"{total_general} lei"
 
         return attributes
